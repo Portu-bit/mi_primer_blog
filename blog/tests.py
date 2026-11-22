@@ -13,15 +13,11 @@ class BlogAccessTests(TestCase):
         self.author = User.objects.create_user(username="author", password="test-pass-123")
         self.other_user = User.objects.create_user(username="other", password="test-pass-456")
         self.published = Post.objects.create(
-            author=self.author,
-            title="Publicación pública",
-            text="Contenido visible",
-            published_date=timezone.now(),
+            author=self.author, title="Publicación pública",
+            text="Contenido visible", published_date=timezone.now(),
         )
         self.draft = Post.objects.create(
-            author=self.author,
-            title="Borrador privado",
-            text="Contenido no publicado",
+            author=self.author, title="Borrador privado", text="Contenido no publicado",
         )
 
     def test_home_lists_only_published_posts(self):
@@ -29,6 +25,11 @@ class BlogAccessTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Publicación pública")
         self.assertNotContains(response, "Borrador privado")
+
+    def test_anonymous_user_can_open_published_detail(self):
+        response = self.client.get(reverse("post_detail", args=[self.published.pk]))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Contenido visible")
 
     def test_anonymous_user_cannot_open_draft_detail(self):
         response = self.client.get(reverse("post_detail", args=[self.draft.pk]))
@@ -52,8 +53,7 @@ class BlogAccessTests(TestCase):
     def test_logged_in_user_can_create_post(self):
         self.client.force_login(self.author)
         response = self.client.post(reverse("post_new"), {
-            "title": "Nuevo artículo",
-            "text": "Texto del artículo",
+            "title": "Nuevo artículo", "text": "Texto del artículo",
         })
         created = Post.objects.get(title="Nuevo artículo")
         self.assertEqual(created.author, self.author)
